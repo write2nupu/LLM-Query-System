@@ -5,15 +5,14 @@ from hashlib import sha256
 from typing import cast
 
 import nltk
-
 from dotenv import load_dotenv
 from pinecone import IndexModel, Metric, PineconeAsyncio, ServerlessSpec, Vector
 from pinecone.db_data import IndexAsyncio
 from sentence_transformers import SentenceTransformer
 
 load_dotenv()
-nltk.download('punkt')
-nltk.download('punkt_tab')
+nltk.download("punkt")
+nltk.download("punkt_tab")
 
 from nltk.tokenize import sent_tokenize
 
@@ -36,6 +35,7 @@ def split_text_naturally(text: str, max_len=512):
         chunks.append(current_chunk)
 
     return chunks
+
 
 class EmbeddingGenerator:
     pinecone: PineconeAsyncio = PineconeAsyncio(api_key=PINECONE_API_KEY)
@@ -82,7 +82,7 @@ class EmbeddingGenerator:
 
         vectors = [self.generate_vectors(chunk) for chunk in chunks if chunk.strip()]
 
-        await IndexAsyncio(PINECONE_API_KEY, self.index.to_dict()['host']).upsert(
+        await IndexAsyncio(PINECONE_API_KEY, self.index.to_dict()["host"]).upsert(
             vectors=[
                 Vector(id=sha256(chunk.encode()).hexdigest(), values=cast(list[float], vector), metadata={"text": chunk})
                 for chunk, vector in zip(chunks, vectors)
@@ -92,7 +92,7 @@ class EmbeddingGenerator:
 
     async def query_embeddings(self, query: str, top_k: int = 5):
         query_vector = self.generate_vectors(query)
-        results = await IndexAsyncio(PINECONE_API_KEY, self.index.to_dict()['host']).query(
+        results = await IndexAsyncio(PINECONE_API_KEY, self.index.to_dict()["host"]).query(
             vector=query_vector, top_k=top_k, include_metadata=True
         )
         return results
