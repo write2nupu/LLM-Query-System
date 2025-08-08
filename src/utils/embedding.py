@@ -8,7 +8,7 @@ import nltk
 from dotenv import load_dotenv
 from pinecone import IndexModel, Metric, PineconeAsyncio, ServerlessSpec, Vector
 from pinecone.db_data import IndexAsyncio
-from sentence_transformers import SentenceTransformer
+from langchain_huggingface import HuggingFaceEmbeddings
 
 load_dotenv()
 nltk.download("punkt")
@@ -42,18 +42,17 @@ class EmbeddingGenerator:
     index: IndexModel
 
     def __init__(self, model_name: str):
-        self.model = SentenceTransformer(model_name)
+        self.embeddings = HuggingFaceEmbeddings(model_name=model_name)
         self._cached_chunks: list[str] = []
 
     def generate_vectors(self, text: str):
-        return self.model.encode(text).tolist()
+        return self.embeddings.embed_query(text)
 
     async def create_index(self, index_name: str = "hackrx-embeddings"):
-        dimension = self.model.get_sentence_embedding_dimension()
         if not await self.pinecone.has_index(index_name):
             self.index = await self.pinecone.create_index(
                 name=index_name,
-                dimension=dimension if dimension else 768,
+                dimension=384,
                 metric=Metric.DOTPRODUCT,
                 spec=ServerlessSpec(
                     cloud="aws",
